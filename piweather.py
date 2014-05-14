@@ -26,7 +26,7 @@
 # SOFTWARE.
 
 # A fun little project to show the weather on a LCD character display with a Raspberry Pi
-# View Readme.md for details
+# View README.md for details
 
 import RPi.GPIO as GPIO
 import time
