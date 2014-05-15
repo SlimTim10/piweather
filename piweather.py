@@ -25,14 +25,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# A fun little project to show the weather on a LCD character display with a Raspberry Pi
-# View README.md for details
+# A fun little project to show the weather on a LCD character display with a Raspberry Pi.
+# View README.md for details.
 
 import RPi.GPIO as GPIO
 import time
 import urllib
 import re
 
+# Set a pin on the LCD high or low
 def setpin(p, b):
         if p == 'RS':
                 GPIO.output(4, b)
@@ -43,33 +44,38 @@ def setpin(p, b):
         else:
                 print "Error: invalid pin"
 
+# Put a byte on the LCD data port
 def port(d):
-        GPIO.output(23, ((d & 16) > 0))
-        GPIO.output(24, ((d & 32) > 0))
-        GPIO.output(25, ((d & 64) > 0))
-        GPIO.output(27, ((d & 128) > 0))
+        GPIO.output(23, ((d & 0x10) > 0))
+        GPIO.output(24, ((d & 0x20) > 0))
+        GPIO.output(25, ((d & 0x40) > 0))
+        GPIO.output(27, ((d & 0x80) > 0))
 
+# Transfer 4 bits to/from the LCD
 def nybble():
-        setpin('E', True)
+        setpin('E', 1)
         time.sleep(0.002)
-        setpin('E', False)
+        setpin('E', 0)
 
+# Send a command to the LCD
 def command(d):
         port(d)
-        setpin('RS', False)
-        setpin('RW', False)
+        setpin('RS', 0)
+        setpin('RW', 0)
         nybble()
         port(d << 4)
         nybble()
 
+# Send a byte of data to the LCD
 def data(d):
         port(d)
-        setpin('RS', True)
-        setpin('RW', False)
+        setpin('RS', 1)
+        setpin('RW', 0)
         nybble()
         port(d << 4)
         nybble()
 
+# Write a string (up to 8 characters) to line 1 or 2 of the LCD
 def write(line, s):
         if line == 1:
                 command(0x80)
@@ -83,12 +89,15 @@ def write(line, s):
                 data(0x20)
                 i += 1
 
+# Clear LCD
 def lcd_clear():
         command(0x01)
 
+# Turn LCD cursor off
 def lcd_cursor_off():
         command(0x0C)
 
+# Initialize LCD
 def init():
         port(0)
         time.sleep(1)
@@ -108,16 +117,18 @@ def init():
         command(0x06)
 
 #GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
+GPIO.setmode(GPIO.BCM) # Refer to P1 pins by GPIO number
 
-GPIO.setup(4, GPIO.OUT)         # RS
-GPIO.setup(17, GPIO.OUT)        # R/W
-GPIO.setup(22, GPIO.OUT)        # E
-GPIO.setup(23, GPIO.OUT)        # DB4
-GPIO.setup(24, GPIO.OUT)        # DB5
-GPIO.setup(25, GPIO.OUT)        # DB6
-GPIO.setup(27, GPIO.OUT)        # DB7
+# Set up GPIOs to interface with LCD
+GPIO.setup(4, GPIO.OUT)         # LCD RS
+GPIO.setup(17, GPIO.OUT)        # LCD R/W
+GPIO.setup(22, GPIO.OUT)        # LCD E
+GPIO.setup(23, GPIO.OUT)        # LCD DB4
+GPIO.setup(24, GPIO.OUT)        # LCD DB5
+GPIO.setup(25, GPIO.OUT)        # LCD DB6
+GPIO.setup(27, GPIO.OUT)        # LCD DB7
 
+# Ensure GPIO cleanup when script is ended by SIGINT (Ctrl-C)
 try:
         while True:
                 init()
@@ -125,8 +136,9 @@ try:
                 init()
 
                 lcd_clear()
-                lcd_cursor_off()
+                lcd_cursor_off() # Cursor looks ugly
 
+                # Initialize with "?" in case regex fails
                 curtemp = "?"
                 hitemp = "?"
                 conditions = "?"
@@ -141,8 +153,7 @@ try:
 
                 try:
                         m = re.findall("<li class=\"high\".*>(.*)&.*;", page)
-                        hitemp = m[0]
-
+                        hitemp = m[0] # Other days should be m[1:8]
                 except:
                         pass
 
@@ -162,29 +173,34 @@ try:
                 except:
                         pass
 
+                # Line 1 shows current temperature and high (if available)
+                # (e.g., "16 H19" for currently 16, high of 19)
                 line1 = curtemp[:2]
                 if hitemp:
                         line1 += " H" + hitemp[:2]
                 write(1, line1)
 
+                # Line 2 shows current condition and later (same day) condition
+                # (e.g., "Now: Cloudy. Later: Showers.")
                 line2 = conditions
 
                 print line1 # Debug
                 print line2 # Debug
 
+                # Scroll long line
                 if len(line2) > 8:
                         starttime = time.time()
-                        while time.time() < starttime + 60: # Update after 60 seconds
+                        while time.time() < starttime + 60: # Stop after 60 seconds to recheck weather
                                 tmp = line2
                                 write(2, tmp[:8])
                                 time.sleep(1)
                                 while tmp:
                                         tmp = tmp[1:]
                                         write(2, tmp[:8])
-                                        time.sleep(0.2)
+                                        time.sleep(0.2) # Adjust for scrolling speed
                 else:
                         write(2, line2)
-                        time.sleep(60) # Update after 60 seconds
+                        time.sleep(60) # Recheck weather after 60 seconds
 
 except KeyboardInterrupt:
         print "Stopping"
