@@ -155,19 +155,19 @@ while True:
         page = urllib.urlopen("http://weather.gc.ca/city/pages/on-143_metric_e.html").read()
 
         try:
-                curtemp = re.search("<p class=\"temperature\">(.+)&deg;", page).group(1)        # Current temperature
+                curtemp = re.search("<p class=\"temperature\">(.+)&deg;", page).group(1) # Current temperature
         except:
                 pass
 
         try:
-                m = re.findall("<li class=\"high\".*>(.*)&.*;", page)
-                hitemp = m[0] # Other days should be m[1:8]
+                m = re.findall("<li class=\"high\".*>(.*)&.*;", page) # High temperatures of the week
+                hitemp = m[0] # High of today. Other days should be m[1:8]
         except:
                 pass
 
         try:
-                conditions = re.findall("weathericons.*alt=\"(.*)\" title", page)
-                conditions = "Now: " + conditions[0] + ". Later: " + conditions[1] + "."
+                conditions = re.findall("weathericons.*alt=\"(.*)\" title", page) # Conditions of the week
+                conditions = "Now: " + conditions[0] + ". Later: " + conditions[1] + "." # Today's condition (current and later)
                 # Short forecast
                 #conditions = conditions[0] + " " + conditions[1]
                 #if re.search("([Rr]ain)|([Ss]hower)", conditions):
@@ -188,7 +188,7 @@ while True:
                 line1 += " H" + hitemp[:2]
         write(1, line1)
 
-        # Line 2 shows current condition and later (same day) condition
+        # Line 2 shows current condition and later (today) condition
         # (e.g., "Now: Cloudy. Later: Showers.")
         line2 = conditions
 
@@ -198,7 +198,7 @@ while True:
         # Scroll long line
         if len(line2) > 8:
                 starttime = time.time()
-                while time.time() < starttime + 60: # Stop after 60 seconds to recheck weather
+                while time.time() < starttime + 300: # Stop after 5 minutes to recheck weather
                         tmp = line2
                         write(2, tmp[:8])
                         time.sleep(1)
@@ -208,4 +208,4 @@ while True:
                                 time.sleep(0.2) # Adjust for scrolling speed
         else:
                 write(2, line2)
-                time.sleep(60) # Recheck weather after 60 seconds
+                time.sleep(300) # Recheck weather after 300 seconds

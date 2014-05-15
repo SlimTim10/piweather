@@ -30,7 +30,7 @@ A fun little project to show the weather on a LCD character display with a Raspb
 LCD pin 3 (V0) has a 1.5K ohm resistor connected to ground for the LCD's contrast.
 
 ## Description
-This python script scrapes the [GC weather forecast page for Toronto, ON](http://weather.gc.ca/city/pages/on-143_metric_e.html) for the temperature and weather conditions to display the information on a LCD display (and update once every minute). [Other cities in Canada](http://weather.gc.ca/canada_e.html) work as well, but for a different weather website, the regex will have to be changed. The code comments may be lacking because this was a personal project.
+This python script scrapes the [GC weather forecast page for Toronto, ON](http://weather.gc.ca/city/pages/on-143_metric_e.html) for the temperature and weather conditions to display the information on a LCD display (and update once every 5 minutes). [Other cities in Canada](http://weather.gc.ca/canada_e.html) work as well, but for a different weather website, the regex will have to be changed. The code comments may be lacking because this was a personal project.
 
 #### Example weather display:
 ```
