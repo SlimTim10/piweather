@@ -59,4 +59,4 @@ The following setup starts piweather.py on boot and allows you to SSH in to term
 
 To end the script safely in SSH:
 
-    sudo pkill -SIGINT piweather
+    sudo pkill -SIGTERM piweather
