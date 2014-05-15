@@ -152,7 +152,14 @@ while True:
         conditions = "?"
         #forecast = "?"
 
-        page = urllib.urlopen("http://weather.gc.ca/city/pages/on-143_metric_e.html").read()
+        # Keep trying to connect for 1 minute if network is unavailable
+        starttime = time.time()
+        while time.time() < starttime + 60:
+                try:
+                        # Get weather web page
+                        page = urllib.urlopen("http://weather.gc.ca/city/pages/on-143_metric_e.html").read()
+                except:
+                        print "Could not connect. Retrying..."
 
         try:
                 curtemp = re.search("<p class=\"temperature\">(.+)&deg;", page).group(1) # Current temperature
