@@ -32,6 +32,12 @@ import RPi.GPIO as GPIO
 import time
 import urllib
 import re
+import signal, sys
+
+def stophandler(signum = None, frame = None):
+        print "Stopping"
+        GPIO.cleanup()
+        sys.exit(0)
 
 # Set a pin on the LCD high or low
 def setpin(p, b):
@@ -116,6 +122,9 @@ def init():
         command(0x0F)
         command(0x06)
 
+for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+        signal.signal(sig, stophandler)
+
 #GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM) # Refer to P1 pins by GPIO number
 
@@ -129,81 +138,74 @@ GPIO.setup(25, GPIO.OUT)        # LCD DB6
 GPIO.setup(27, GPIO.OUT)        # LCD DB7
 
 # Ensure GPIO cleanup when script is ended by SIGINT (Ctrl-C)
-try:
-        while True:
-                init()
-                init() # Single init() seems to often fail
-                init()
+while True:
+        init()
+        init() # Single init() seems to often fail
+        init()
 
-                lcd_clear()
-                lcd_cursor_off() # Cursor looks ugly
+        lcd_clear()
+        lcd_cursor_off() # Cursor looks ugly
 
-                # Initialize with "?" in case regex fails
-                curtemp = "?"
-                hitemp = "?"
-                conditions = "?"
-                #forecast = "?"
+        # Initialize with "?" in case regex fails
+        curtemp = "?"
+        hitemp = "?"
+        conditions = "?"
+        #forecast = "?"
 
-                page = urllib.urlopen("http://weather.gc.ca/city/pages/on-143_metric_e.html").read()
+        page = urllib.urlopen("http://weather.gc.ca/city/pages/on-143_metric_e.html").read()
 
-                try:
-                        curtemp = re.search("<p class=\"temperature\">(.+)&deg;", page).group(1)        # Current temperature
-                except:
-                        pass
+        try:
+                curtemp = re.search("<p class=\"temperature\">(.+)&deg;", page).group(1)        # Current temperature
+        except:
+                pass
 
-                try:
-                        m = re.findall("<li class=\"high\".*>(.*)&.*;", page)
-                        hitemp = m[0] # Other days should be m[1:8]
-                except:
-                        pass
+        try:
+                m = re.findall("<li class=\"high\".*>(.*)&.*;", page)
+                hitemp = m[0] # Other days should be m[1:8]
+        except:
+                pass
 
-                try:
-                        conditions = re.findall("weathericons.*alt=\"(.*)\" title", page)
-                        conditions = "Now: " + conditions[0] + ". Later: " + conditions[1] + "."
-                        # Short forecast
-                        #conditions = conditions[0] + " " + conditions[1]
-                        #if re.search("([Rr]ain)|([Ss]hower)", conditions):
-                        #        forecast = "Rain"
-                        #elif re.search("([Ss]now)|([Ff]lurries)", conditions):
-                        #        forecast = "Snow"
-                        #elif re.search("[Cc]loud", conditions):
-                        #        forecast = "Cloud"
-                        #elif re.search("[Ss]un", conditions):
-                        #        forecast = "Sun"
-                except:
-                        pass
+        try:
+                conditions = re.findall("weathericons.*alt=\"(.*)\" title", page)
+                conditions = "Now: " + conditions[0] + ". Later: " + conditions[1] + "."
+                # Short forecast
+                #conditions = conditions[0] + " " + conditions[1]
+                #if re.search("([Rr]ain)|([Ss]hower)", conditions):
+                #        forecast = "Rain"
+                #elif re.search("([Ss]now)|([Ff]lurries)", conditions):
+                #        forecast = "Snow"
+                #elif re.search("[Cc]loud", conditions):
+                #        forecast = "Cloud"
+                #elif re.search("[Ss]un", conditions):
+                #        forecast = "Sun"
+        except:
+                pass
 
-                # Line 1 shows current temperature and high (if available)
-                # (e.g., "16 H19" for currently 16, high of 19)
-                line1 = curtemp[:2]
-                if hitemp:
-                        line1 += " H" + hitemp[:2]
-                write(1, line1)
+        # Line 1 shows current temperature and high (if available)
+        # (e.g., "16 H19" for currently 16, high of 19)
+        line1 = curtemp[:2]
+        if hitemp:
+                line1 += " H" + hitemp[:2]
+        write(1, line1)
 
-                # Line 2 shows current condition and later (same day) condition
-                # (e.g., "Now: Cloudy. Later: Showers.")
-                line2 = conditions
+        # Line 2 shows current condition and later (same day) condition
+        # (e.g., "Now: Cloudy. Later: Showers.")
+        line2 = conditions
 
-                print line1 # Debug
-                print line2 # Debug
+        print line1 # Debug
+        print line2 # Debug
 
-                # Scroll long line
-                if len(line2) > 8:
-                        starttime = time.time()
-                        while time.time() < starttime + 60: # Stop after 60 seconds to recheck weather
-                                tmp = line2
+        # Scroll long line
+        if len(line2) > 8:
+                starttime = time.time()
+                while time.time() < starttime + 60: # Stop after 60 seconds to recheck weather
+                        tmp = line2
+                        write(2, tmp[:8])
+                        time.sleep(1)
+                        while tmp:
+                                tmp = tmp[1:]
                                 write(2, tmp[:8])
-                                time.sleep(1)
-                                while tmp:
-                                        tmp = tmp[1:]
-                                        write(2, tmp[:8])
-                                        time.sleep(0.2) # Adjust for scrolling speed
-                else:
-                        write(2, line2)
-                        time.sleep(60) # Recheck weather after 60 seconds
-
-except KeyboardInterrupt:
-        print "Stopping"
-
-finally:
-        GPIO.cleanup()
+                                time.sleep(0.2) # Adjust for scrolling speed
+        else:
+                write(2, line2)
+                time.sleep(60) # Recheck weather after 60 seconds
