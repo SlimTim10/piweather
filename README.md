@@ -53,7 +53,7 @@ The following setup starts piweather.py on boot and allows you to SSH in to term
 
 4. Register script to be run on boot:
 
-        sudo update-rc.d piweather defaults
+        sudo update-rc.d piweather defaults 98
 
 5. Register SSH to be run on boot:
 
@@ -62,3 +62,24 @@ The following setup starts piweather.py on boot and allows you to SSH in to term
 To end the script safely in SSH:
 
     sudo pkill -SIGTERM piweather
+
+## Additional Information
+####To set up Wi-Fi to connect on boot:
+```
+sudo apt-get update
+sudo apt-get install wicd-curses
+sudo wicd curses
+
+Press 'P' for preferences
+Set Wireless Interface: wlan0
+Press F10 to save
+Press 'R' to refresh
+Navigate to your network
+Press right arrow to configure
+Select 'Automatically connect to this network'
+Set Key: <wireless password>
+Press F10 to save
+Press 'C' to connect
+
+Edit /etc/network/interfaces to include: auto wlan0
+```

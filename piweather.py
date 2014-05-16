@@ -158,8 +158,9 @@ while True:
                 try:
                         # Get weather web page
                         page = urllib.urlopen("http://weather.gc.ca/city/pages/on-143_metric_e.html").read()
-                except:
-                        print "Could not connect. Retrying..."
+                except IOError:
+                        print "Could not connect. Retrying in 1 second..."
+                        time.sleep(1)
 
         try:
                 curtemp = re.search("<p class=\"temperature\">(.+)&deg;", page).group(1) # Current temperature
