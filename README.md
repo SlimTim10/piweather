@@ -68,7 +68,7 @@ To end the script safely in SSH:
 ```
 sudo apt-get update
 sudo apt-get install wicd-curses
-sudo wicd curses
+sudo wicd-curses
 
 Press 'P' for preferences
 Set Wireless Interface: wlan0
